@@ -1,10 +1,10 @@
 import React from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { listarClientes } from '../services/clienteService';
+import { listarClientes, eliminarCliente } from '../services/clienteService';
 import Clientes from './Clientes';
 
-vi.mock('../services/clienteService', () => ({ listarClientes: vi.fn() }));
+vi.mock('../services/clienteService', () => ({ listarClientes: vi.fn(), eliminarCliente: vi.fn() }));
 const clientes = [
   { id: 1, nombre: 'Ana Demo', telefono: '3001234567', email: 'ana@example.com', direccion: 'Calle 10', activo: true },
   { id: 2, nombre: 'Luz Torres', telefono: '3019991000', email: 'luz@example.com', direccion: 'Carrera 20', activo: false },
@@ -14,12 +14,12 @@ beforeEach(() => {
   vi.mocked(listarClientes).mockResolvedValue(clientes);
 });
 
-it('consulta y muestra las seis columnas, el total, avatares y estados originales', async () => {
+it('consulta y muestra las siete columnas, el total, avatares y estados originales', async () => {
   render(<Clientes />);
   expect(await screen.findByText('Ana Demo')).toBeInTheDocument();
   expect(listarClientes).toHaveBeenCalledTimes(1);
   expect(screen.getAllByRole('columnheader').map(c => c.textContent)).toEqual([
-    'ID', 'Cliente', 'Teléfono', 'Correo electrónico', 'Dirección', 'Estado',
+    'ID', 'Cliente', 'Teléfono', 'Correo electrónico', 'Dirección', 'Estado', 'Acciones',
   ]);
   expect(screen.getByText('2 clientes registrados')).toBeInTheDocument();
   expect(screen.getByText('Activo')).toHaveClass('active');
@@ -67,4 +67,41 @@ it('conserva el manejo original de errores sin inventar un estado visual nuevo',
     await waitFor(() => expect(consola).toHaveBeenCalledWith('Error cargando clientes:', error));
     expect(screen.getByText('No se encontraron clientes')).toBeInTheDocument();
   } finally { consola.mockRestore(); }
+});
+
+it.each([false, true])('respeta la confirmacion de eliminar: %s', async confirmar => {
+  const confirmacion = vi.spyOn(window, 'confirm').mockReturnValue(confirmar);
+  vi.mocked(eliminarCliente).mockResolvedValue();
+  try {
+    render(<Clientes />);
+    await screen.findByText('Ana Demo');
+    vi.mocked(listarClientes).mockResolvedValue([clientes[1]]);
+    fireEvent.click(screen.getAllByTitle('Eliminar')[0]);
+    expect(confirmacion).toHaveBeenCalledWith('\u00bfDeseas eliminar al cliente "Ana Demo"?');
+    if (confirmar) {
+      await waitFor(() => expect(screen.queryByText('Ana Demo')).not.toBeInTheDocument());
+      expect(eliminarCliente).toHaveBeenCalledWith(1);
+      expect(screen.getByText('1 cliente registrado')).toBeInTheDocument();
+    } else {
+      expect(eliminarCliente).not.toHaveBeenCalled();
+      expect(listarClientes).toHaveBeenCalledTimes(1);
+    }
+  } finally { confirmacion.mockRestore(); }
+});
+
+it('mantiene el listado y muestra el error original si falla eliminar', async () => {
+  const error = new Error('Sin conexion');
+  const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  const alerta = vi.spyOn(window, 'alert').mockImplementation(() => {});
+  const consola = vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.mocked(eliminarCliente).mockRejectedValue(error);
+  try {
+    render(<Clientes />);
+    await screen.findByText('Ana Demo');
+    fireEvent.click(screen.getAllByTitle('Eliminar')[0]);
+    await waitFor(() => expect(alerta).toHaveBeenCalledWith('No fue posible eliminar el cliente'));
+    expect(consola).toHaveBeenCalledWith('Error eliminando cliente:', error);
+    expect(screen.getByText('Ana Demo')).toBeInTheDocument();
+    expect(listarClientes).toHaveBeenCalledTimes(1);
+  } finally { confirmar.mockRestore(); alerta.mockRestore(); consola.mockRestore(); }
 });
