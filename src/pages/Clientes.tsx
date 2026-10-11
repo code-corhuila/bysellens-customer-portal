@@ -1,24 +1,70 @@
 import React, { useEffect, useState } from 'react';
 import { IonIcon } from '@ionic/react';
-import { peopleOutline, searchOutline } from 'ionicons/icons';
-import { listarClientes, type Cliente } from '../services/clienteService';
+import { peopleOutline, searchOutline, trashOutline, personAddOutline, createOutline } from 'ionicons/icons';
+import { listarClientes, eliminarCliente, crearCliente, actualizarCliente, type ClienteRequest, type Cliente } from '../services/clienteService';
+import ClienteForm from '../components/ClienteForm';
 import './Clientes.css';
 
 const Clientes: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState('');
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(null);
 
-  useEffect(() => {
-    const cargarClientes = async () => {
-      try {
-        const respuesta = await listarClientes();
-        setClientes(respuesta);
-      } catch (error) {
-        console.error('Error cargando clientes:', error);
+  const cargarClientes = async () => {
+    try {
+      const respuesta = await listarClientes();
+      setClientes(respuesta);
+    } catch (error) {
+      console.error('Error cargando clientes:', error);
+    }
+  };
+
+  useEffect(() => { cargarClientes(); }, []);
+
+  const abrirNuevoCliente = () => {
+    setClienteSeleccionado(null);
+    setMostrarFormulario(true);
+  };
+
+  const abrirEditarCliente = (cliente: Cliente) => {
+    setClienteSeleccionado(cliente);
+    setMostrarFormulario(true);
+  };
+
+  const cerrarFormulario = () => {
+    setMostrarFormulario(false);
+    setClienteSeleccionado(null);
+  };
+
+  const guardarCliente = async (datos: ClienteRequest) => {
+    try {
+      if (clienteSeleccionado) {
+        await actualizarCliente(clienteSeleccionado.id, datos);
+        alert('Cliente actualizado correctamente');
+      } else {
+        await crearCliente(datos);
+        alert('Cliente registrado correctamente');
       }
-    };
-    cargarClientes();
-  }, []);
+      cerrarFormulario();
+      cargarClientes();
+    } catch (error) {
+      console.error('Error guardando cliente:', error);
+      alert('No fue posible guardar el cliente');
+    }
+  };
+
+  const borrarCliente = async (cliente: Cliente) => {
+    const confirmar = window.confirm(`¿Deseas eliminar al cliente "${cliente.nombre}"?`);
+    if (!confirmar) return;
+    try {
+      await eliminarCliente(cliente.id);
+      cargarClientes();
+    } catch (error) {
+      console.error('Error eliminando cliente:', error);
+      alert('No fue posible eliminar el cliente');
+    }
+  };
 
   const clientesFiltrados = clientes.filter(cliente => {
     const texto = busqueda.toLowerCase().trim();
@@ -37,6 +83,10 @@ const Clientes: React.FC = () => {
           <h1>Clientes</h1>
           <p>Registra y administra la información de tus clientes.</p>
         </div>
+        <button className="clientes-new-button" onClick={abrirNuevoCliente}>
+          <IonIcon icon={personAddOutline} />
+          Nuevo cliente
+        </button>
       </header>
       <main className="clientes-content">
         <section className="clientes-card">
@@ -68,6 +118,7 @@ const Clientes: React.FC = () => {
                   <th>Correo electrónico</th>
                   <th>Dirección</th>
                   <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,10 +141,22 @@ const Clientes: React.FC = () => {
                         {cliente.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
+                    <td>
+                      <div className="cliente-actions">
+                        <button className="cliente-action edit" onClick={() => abrirEditarCliente(cliente)} title="Editar">
+                          <IonIcon icon={createOutline} />
+                          Editar
+                        </button>
+                        <button className="cliente-action delete" onClick={() => borrarCliente(cliente)} title="Eliminar">
+                          <IonIcon icon={trashOutline} />
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={6} className="clientes-empty">
+                    <td colSpan={7} className="clientes-empty">
                       <div className="clientes-empty-icon"><IonIcon icon={peopleOutline} /></div>
                       <strong>No se encontraron clientes</strong>
                       <span>Registra un cliente nuevo para comenzar.</span>
@@ -105,6 +168,14 @@ const Clientes: React.FC = () => {
           </div>
         </section>
       </main>
+      {mostrarFormulario && (
+        <div className="cliente-modal-overlay">
+          <button className="cliente-modal-backdrop" onClick={cerrarFormulario} aria-label="Cerrar formulario" />
+          <aside className="cliente-modal-panel">
+            <ClienteForm cliente={clienteSeleccionado} onGuardar={guardarCliente} onCancelar={cerrarFormulario} />
+          </aside>
+        </div>
+      )}
     </div>
   );
 };

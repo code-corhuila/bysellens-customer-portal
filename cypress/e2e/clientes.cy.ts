@@ -11,7 +11,7 @@ describe('Consulta original de clientes', () => {
   it('muestra datos MOCK, total, columnas y estado con los estilos originales', () => {
     cy.get('.clientes-card').should('have.css', 'border-radius', '20px');
     cy.get('.clientes-page').should('have.css', 'background-color', 'rgb(255, 248, 251)');
-    cy.get('thead th').should('have.length', 6);
+    cy.get('thead th').should('have.length', 7);
     cy.contains('1 cliente registrado').should('be.visible');
     cy.contains('tbody', '3001234567');
     cy.contains('tbody', 'ana@example.com');
