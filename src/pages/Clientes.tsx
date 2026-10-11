@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { IonIcon } from '@ionic/react';
-import { peopleOutline, searchOutline, trashOutline } from 'ionicons/icons';
-import { listarClientes, eliminarCliente, type Cliente } from '../services/clienteService';
+import { peopleOutline, searchOutline, trashOutline, personAddOutline, createOutline } from 'ionicons/icons';
+import { listarClientes, eliminarCliente, crearCliente, actualizarCliente, type ClienteRequest, type Cliente } from '../services/clienteService';
+import ClienteForm from '../components/ClienteForm';
 import './Clientes.css';
 
 const Clientes: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState('');
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(null);
 
   const cargarClientes = async () => {
     try {
@@ -18,6 +21,38 @@ const Clientes: React.FC = () => {
   };
 
   useEffect(() => { cargarClientes(); }, []);
+
+  const abrirNuevoCliente = () => {
+    setClienteSeleccionado(null);
+    setMostrarFormulario(true);
+  };
+
+  const abrirEditarCliente = (cliente: Cliente) => {
+    setClienteSeleccionado(cliente);
+    setMostrarFormulario(true);
+  };
+
+  const cerrarFormulario = () => {
+    setMostrarFormulario(false);
+    setClienteSeleccionado(null);
+  };
+
+  const guardarCliente = async (datos: ClienteRequest) => {
+    try {
+      if (clienteSeleccionado) {
+        await actualizarCliente(clienteSeleccionado.id, datos);
+        alert('Cliente actualizado correctamente');
+      } else {
+        await crearCliente(datos);
+        alert('Cliente registrado correctamente');
+      }
+      cerrarFormulario();
+      cargarClientes();
+    } catch (error) {
+      console.error('Error guardando cliente:', error);
+      alert('No fue posible guardar el cliente');
+    }
+  };
 
   const borrarCliente = async (cliente: Cliente) => {
     const confirmar = window.confirm(`¿Deseas eliminar al cliente "${cliente.nombre}"?`);
@@ -48,6 +83,10 @@ const Clientes: React.FC = () => {
           <h1>Clientes</h1>
           <p>Registra y administra la información de tus clientes.</p>
         </div>
+        <button className="clientes-new-button" onClick={abrirNuevoCliente}>
+          <IonIcon icon={personAddOutline} />
+          Nuevo cliente
+        </button>
       </header>
       <main className="clientes-content">
         <section className="clientes-card">
@@ -104,6 +143,10 @@ const Clientes: React.FC = () => {
                     </td>
                     <td>
                       <div className="cliente-actions">
+                        <button className="cliente-action edit" onClick={() => abrirEditarCliente(cliente)} title="Editar">
+                          <IonIcon icon={createOutline} />
+                          Editar
+                        </button>
                         <button className="cliente-action delete" onClick={() => borrarCliente(cliente)} title="Eliminar">
                           <IonIcon icon={trashOutline} />
                           Eliminar
@@ -125,6 +168,14 @@ const Clientes: React.FC = () => {
           </div>
         </section>
       </main>
+      {mostrarFormulario && (
+        <div className="cliente-modal-overlay">
+          <button className="cliente-modal-backdrop" onClick={cerrarFormulario} aria-label="Cerrar formulario" />
+          <aside className="cliente-modal-panel">
+            <ClienteForm cliente={clienteSeleccionado} onGuardar={guardarCliente} onCancelar={cerrarFormulario} />
+          </aside>
+        </div>
+      )}
     </div>
   );
 };
