@@ -1,24 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { IonIcon } from '@ionic/react';
-import { peopleOutline, searchOutline } from 'ionicons/icons';
-import { listarClientes, type Cliente } from '../services/clienteService';
+import { peopleOutline, searchOutline, trashOutline } from 'ionicons/icons';
+import { listarClientes, eliminarCliente, type Cliente } from '../services/clienteService';
 import './Clientes.css';
 
 const Clientes: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState('');
 
-  useEffect(() => {
-    const cargarClientes = async () => {
-      try {
-        const respuesta = await listarClientes();
-        setClientes(respuesta);
-      } catch (error) {
-        console.error('Error cargando clientes:', error);
-      }
-    };
-    cargarClientes();
-  }, []);
+  const cargarClientes = async () => {
+    try {
+      const respuesta = await listarClientes();
+      setClientes(respuesta);
+    } catch (error) {
+      console.error('Error cargando clientes:', error);
+    }
+  };
+
+  useEffect(() => { cargarClientes(); }, []);
+
+  const borrarCliente = async (cliente: Cliente) => {
+    const confirmar = window.confirm(`¿Deseas eliminar al cliente "${cliente.nombre}"?`);
+    if (!confirmar) return;
+    try {
+      await eliminarCliente(cliente.id);
+      cargarClientes();
+    } catch (error) {
+      console.error('Error eliminando cliente:', error);
+      alert('No fue posible eliminar el cliente');
+    }
+  };
 
   const clientesFiltrados = clientes.filter(cliente => {
     const texto = busqueda.toLowerCase().trim();
@@ -68,6 +79,7 @@ const Clientes: React.FC = () => {
                   <th>Correo electrónico</th>
                   <th>Dirección</th>
                   <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,10 +102,18 @@ const Clientes: React.FC = () => {
                         {cliente.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
+                    <td>
+                      <div className="cliente-actions">
+                        <button className="cliente-action delete" onClick={() => borrarCliente(cliente)} title="Eliminar">
+                          <IonIcon icon={trashOutline} />
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={6} className="clientes-empty">
+                    <td colSpan={7} className="clientes-empty">
                       <div className="clientes-empty-icon"><IonIcon icon={peopleOutline} /></div>
                       <strong>No se encontraron clientes</strong>
                       <span>Registra un cliente nuevo para comenzar.</span>
