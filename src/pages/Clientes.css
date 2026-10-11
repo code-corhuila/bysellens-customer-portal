@@ -13,7 +13,7 @@
   border-bottom: 1px solid #f1dbe5;
 }
 
-.clientes-eyebrow {
+.clientes-eyebrow, .cliente-form-eyebrow {
   display: block;
   margin-bottom: 8px;
   color: #c65b87;
