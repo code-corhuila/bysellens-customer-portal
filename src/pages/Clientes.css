@@ -307,3 +307,94 @@
   background: #fff3f5;
   border-color: #df9aaa;
 }
+
+.clientes-new-button {
+  border: none;
+  min-height: 50px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: 14px;
+  background: #d45d8a;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(212, 93, 138, 0.18);
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.clientes-new-button:hover {
+  background: #c84f7d;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(212, 93, 138, 0.25);
+}
+.clientes-new-button ion-icon {
+  font-size: 18px;
+}
+.cliente-action.edit {
+  border: 1px solid #efd2de;
+  color: #c65782;
+}
+.cliente-action.edit:hover {
+  background: #fff1f6;
+  border-color: #d98baa;
+}
+.cliente-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(39, 31, 36, 0.42);
+  animation: clienteOverlayIn 0.2s ease;
+}
+@keyframes clienteOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.cliente-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+.cliente-modal-panel {
+  position: relative;
+  z-index: 2;
+  width: min(620px, 92vw);
+  height: 100vh;
+  overflow: hidden;
+  background: #fff9fb;
+  box-shadow:
+    -15px 0 50px rgba(52, 35, 44, 0.15);
+  animation: clientePanelIn 0.28s ease;
+}
+@keyframes clientePanelIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@media (max-width: 700px) {
+  .clientes-new-button {
+    width: 100%;
+    justify-content: center;
+  }
+  .cliente-modal-panel {
+    width: 100%;
+  }
+}
